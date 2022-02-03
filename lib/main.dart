@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'widgets/homePage.dart';
+import 'widgets/pages/homePage.dart';
+import 'widgets/pages/menu.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const HomePage(title: "mf-meix"),
-        //'/news': (context) => NewsPage(),
+        '/menu': (context) => const MenuPage(),
         //'/more': (context) => MorePage(),
       },
       //home: HomePage(),
