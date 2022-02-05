@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mf_meix_le_tige/widgets/pages/menu.dart';
+import 'package:mf_meix_le_tige/model/Team.dart';
+import 'package:mf_meix_le_tige/pages/menu.dart';
 import 'dart:convert' as convert;
 import 'package:shimmer/shimmer.dart';
 
@@ -16,10 +19,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _enabled = true;
+  List<Team> teams = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.grey),
       body: FutureBuilder(
         future: fetchData(), // function where you call your api
         builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
@@ -39,7 +44,7 @@ class _HomePageState extends State<HomePage> {
                 child: Text('Error: ${snapshot.error}'),
               );
             } else {
-              return const MenuPage();
+              return MenuPage(teams: teams);
             } // snapshot.data  :- get your object which is pass from your downloadData() function
           }
         },
@@ -58,12 +63,16 @@ class _HomePageState extends State<HomePage> {
           "WP_Access eyJpdiI6Ikdoa0VQMkpMdkFQRUFpU0VkRXlTXC9BPT0iLCJ2YWx1ZSI6IktEMG9KRTMxRjMxMlJnKys2RSszV0FQbGxBU0pjZ2l4YnFlWGF4U00wQzRxbVFEcTJyTkVsaFwvcmxDZkVEYWZKIiwibWFjIjoiODg1YjgzMjY4ZmU2MDdhNGFlNmRmNGU4NWQxNTQwMDY2YmU2ZjU2MjY2YzRjZTA1MWRlNTU5NDIwZDQxYmNmMyJ9"
     });
     if (response.statusCode == 200) {
+      // to look at the logo for 5 sec
       await Future.delayed(const Duration(seconds: 5), () {});
-      var jsonResponse =
-          convert.jsonDecode(response.body) as Map<String, dynamic>;
-      String ranking = jsonResponse['elements'].toString();
-      print(ranking);
-      return Future.value(ranking);
+
+      // fetch ranking data
+      var rankingJson = jsonDecode(response.body)["elements"] as List;
+      List<Team> teamsObjs = rankingJson.map((teamJson) => Team.fromJson(teamJson)).toList();
+
+      teams = teamsObjs;
+
+      return Future.value("");
     } else {
       return Future.value(
           'Request failed with status: ${response.statusCode}.');
