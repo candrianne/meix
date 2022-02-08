@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mf_meix_le_tige/model/Match.dart';
 import 'package:mf_meix_le_tige/model/Team.dart';
 import 'package:mf_meix_le_tige/pages/menu.dart';
 import 'dart:convert' as convert;
@@ -20,6 +22,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool _enabled = true;
   List<Team> teams = [];
+  List<Game> games = [];
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +47,7 @@ class _HomePageState extends State<HomePage> {
                 child: Text('Error: ${snapshot.error}'),
               );
             } else {
-              return MenuPage(teams: teams);
+              return MenuPage(teams: teams, games: games);
             } // snapshot.data  :- get your object which is pass from your downloadData() function
           }
         },
@@ -57,25 +60,50 @@ class _HomePageState extends State<HomePage> {
     var url = Uri.https('gestion.lffs.eu',
         '/lms_league_ws/public/api/v1/ranking/byMyLeague', {'serie_id': '498'});
 
-    // Await the http get response, then decode the json-formatted response.
-    var response = await http.get(url, headers: {
-      "Authorization":
-          "WP_Access eyJpdiI6Ikdoa0VQMkpMdkFQRUFpU0VkRXlTXC9BPT0iLCJ2YWx1ZSI6IktEMG9KRTMxRjMxMlJnKys2RSszV0FQbGxBU0pjZ2l4YnFlWGF4U00wQzRxbVFEcTJyTkVsaFwvcmxDZkVEYWZKIiwibWFjIjoiODg1YjgzMjY4ZmU2MDdhNGFlNmRmNGU4NWQxNTQwMDY2YmU2ZjU2MjY2YzRjZTA1MWRlNTU5NDIwZDQxYmNmMyJ9"
+    var url2 = Uri.https(
+        'gestion.lffs.eu', '/lms_league_ws/public/api/v1/game/byMyLeague', {
+      'with_referees': 'true',
+      'no_forfeit': 'true',
+      'season_id': '5',
+      'sort[0]': 'date',
+      'sort[1]': 'time',
+      'club_id': '1606'
     });
-    if (response.statusCode == 200) {
+
+    var responses = await Future.wait([
+      http.get(url, headers: {
+        "Authorization":
+            "WP_Access eyJpdiI6Ikdoa0VQMkpMdkFQRUFpU0VkRXlTXC9BPT0iLCJ2YWx1ZSI6IktEMG9KRTMxRjMxMlJnKys2RSszV0FQbGxBU0pjZ2l4YnFlWGF4U00wQzRxbVFEcTJyTkVsaFwvcmxDZkVEYWZKIiwibWFjIjoiODg1YjgzMjY4ZmU2MDdhNGFlNmRmNGU4NWQxNTQwMDY2YmU2ZjU2MjY2YzRjZTA1MWRlNTU5NDIwZDQxYmNmMyJ9"
+      }),
+      http.get(url2, headers: {
+        "Authorization":
+            "WP_Access eyJpdiI6Ikdoa0VQMkpMdkFQRUFpU0VkRXlTXC9BPT0iLCJ2YWx1ZSI6IktEMG9KRTMxRjMxMlJnKys2RSszV0FQbGxBU0pjZ2l4YnFlWGF4U00wQzRxbVFEcTJyTkVsaFwvcmxDZkVEYWZKIiwibWFjIjoiODg1YjgzMjY4ZmU2MDdhNGFlNmRmNGU4NWQxNTQwMDY2YmU2ZjU2MjY2YzRjZTA1MWRlNTU5NDIwZDQxYmNmMyJ9"
+      }),
+    ]);
+
+    if (responses[0].statusCode == 200 && responses[1].statusCode == 200) {
       // to look at the logo for 5 sec
       await Future.delayed(const Duration(seconds: 5), () {});
 
       // fetch ranking data
-      var rankingJson = jsonDecode(response.body)["elements"] as List;
-      List<Team> teamsObjs = rankingJson.map((teamJson) => Team.fromJson(teamJson)).toList();
+      var rankingJson = jsonDecode(responses[0].body)["elements"] as List;
+      List<Team> teamsObjs =
+          rankingJson.map((teamJson) => Team.fromJson(teamJson)).toList();
+
+      // fetch matches data
+      var matchJson = jsonDecode(responses[1].body)["elements"] as List;
+      print(Game.fromJson(matchJson[0]).date);
+      List<Game> gamesObjs = matchJson
+          .map((mJson) => Game.fromJson(mJson))
+          .where((g) => g.serieName == "P3B" && DateTime.now().isBefore(DateFormat('y-MM-dd').parse(g.date)))
+          .toList();
 
       teams = teamsObjs;
+      games = gamesObjs;
 
       return Future.value("");
     } else {
-      return Future.value(
-          'Request failed with status: ${response.statusCode}.');
+      return Future.value('Request failed with status');
     }
   }
 }
