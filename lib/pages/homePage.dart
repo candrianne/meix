@@ -23,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   bool _enabled = true;
   List<Team> teams = [];
   List<Game> games = [];
+  final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
   @override
   Widget build(BuildContext context) {
@@ -92,10 +93,9 @@ class _HomePageState extends State<HomePage> {
 
       // fetch matches data
       var matchJson = jsonDecode(responses[1].body)["elements"] as List;
-      print(Game.fromJson(matchJson[0]).date);
       List<Game> gamesObjs = matchJson
           .map((mJson) => Game.fromJson(mJson))
-          .where((g) => g.serieName == "P3B" && DateTime.now().isBefore(DateFormat('y-MM-dd').parse(g.date)))
+          .where((g) => g.serieName == "P3B")
           .toList();
 
       teams = teamsObjs;
